@@ -10,6 +10,7 @@ def simulate_paths(
     T: float,
     n_steps: int,
     n_paths: int,
+    seed: int | None = None,
 ) -> np.ndarray:
     """Simulate asset price paths under Geometric Brownian Motion.
 
@@ -25,14 +26,15 @@ def simulate_paths(
         An array of shape (n_paths, n_steps + 1) containing the simulated
         price paths, including the initial price at index 0.
     """
+    rng = np.random.default_rng(seed)
     dt = T / n_steps
-    Z = np.random.standard_normal((n_paths, n_steps))
 
     S = np.zeros((n_paths, n_steps + 1))
     S[:, 0] = S0
     for t in range(n_steps):
+        Z = rng.standard_normal(n_paths)
         S[:, t + 1] = S[:, t] * np.exp(
-            (r - sigma**2 / 2) * dt + sigma * np.sqrt(dt) * Z[:, t]
+            (r - sigma**2 / 2) * dt + sigma * np.sqrt(dt) * Z
         )
 
     return S
