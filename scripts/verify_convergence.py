@@ -22,11 +22,22 @@ def main() -> None:
     bs = call_price(S0, K, T, r, sigma)
     print(f"S0={S0}, K={K}, T={T}, r={r}, sigma={sigma}, n_steps={N_STEPS}")
     print(f"Black-Scholes call price: {bs:.6f}\n")
-    print(f"{'n_paths':>10}  {'MC price':>10}  {'abs error':>10}")
+    print(
+        f"{'n_paths':>10}  {'MC price':>10}  {'abs error':>10}  "
+        f"{'std error':>10}  {'err/SE':>10}"
+    )
 
+    # The err/SE column shows how many standard errors the realized MC
+    # estimate lies from the true Black-Scholes price. Values roughly in the
+    # 0-3 range are expected/healthy: the realized error is one random draw
+    # from a distribution whose spread is std_error.
     for n_paths in N_PATHS_LEVELS:
         mc = european_call_price(S0, K, T, r, sigma, N_STEPS, n_paths, seed=SEED)
-        print(f"{n_paths:>10,}  {mc:>10.6f}  {abs(mc - bs):>10.6f}")
+        abs_err = abs(mc.price - bs)
+        print(
+            f"{mc.n_paths:>10,}  {mc.price:>10.6f}  {abs_err:>10.6f}  "
+            f"{mc.std_error:>10.6f}  {abs_err / mc.std_error:>10.3f}"
+        )
 
 
 if __name__ == "__main__":
