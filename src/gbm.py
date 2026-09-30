@@ -3,38 +3,64 @@
 import numpy as np
 
 
+def generate_normals(
+    n_paths: int,
+    n_steps: int,
+    seed: int | None = None,
+) -> np.ndarray:
+    """Draw the standard normal shocks used to drive GBM paths.
+
+    Args:
+        n_paths: Number of simulated paths.
+        n_steps: Number of time steps in each path.
+        seed: Optional seed for the random number generator.
+
+    Returns:
+        An array of shape (n_paths, n_steps) of independent standard
+        normal draws.
+    """
+    rng = np.random.default_rng(seed)
+    return rng.standard_normal((n_paths, n_steps))
+
+
 def simulate_paths(
     S0: float,
     r: float,
     sigma: float,
     T: float,
-    n_steps: int,
-    n_paths: int,
-    seed: int | None = None,
+    Z: np.ndarray,
 ) -> np.ndarray:
     """Simulate asset price paths under Geometric Brownian Motion.
+
+    The simulation is fully deterministic given its inputs: all randomness
+    comes from the pre-generated shocks in Z.
 
     Args:
         S0: Initial price of the underlying asset.
         r: Risk-free interest rate (annualized).
         sigma: Volatility of the underlying asset (annualized).
         T: Time horizon, in years.
-        n_steps: Number of time steps in each path.
-        n_paths: Number of simulated paths to generate.
+        Z: Standard normal shocks of shape (n_paths, n_steps); column t
+            drives the step from time t to t + 1.
 
     Returns:
         An array of shape (n_paths, n_steps + 1) containing the simulated
         price paths, including the initial price at index 0.
+
+    Raises:
+        ValueError: If Z is not 2-dimensional.
     """
-    rng = np.random.default_rng(seed)
+    if Z.ndim != 2:
+        raise ValueError(f"Z must be 2-dimensional, got shape {Z.shape}")
+
+    n_paths, n_steps = Z.shape
     dt = T / n_steps
 
     S = np.zeros((n_paths, n_steps + 1))
     S[:, 0] = S0
     for t in range(n_steps):
-        Z = rng.standard_normal(n_paths)
         S[:, t + 1] = S[:, t] * np.exp(
-            (r - sigma**2 / 2) * dt + sigma * np.sqrt(dt) * Z
+            (r - sigma**2 / 2) * dt + sigma * np.sqrt(dt) * Z[:, t]
         )
 
     return S
