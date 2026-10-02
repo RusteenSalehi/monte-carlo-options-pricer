@@ -88,12 +88,9 @@ def _antithetic_price(
     payoff_pos = _discounted_payoffs(S_T_pos, K, r, T, option_type)
     payoff_neg = _discounted_payoffs(S_T_neg, K, r, T, option_type)
 
-    # The payoffs from Z and -Z are deliberately negatively correlated, so the
-    # n_paths individual payoffs are NOT independent samples. Treating them as
-    # i.i.d. would ignore that correlation and give the wrong standard error.
-    # The pair averages, however, are i.i.d. across pairs (each uses its own
-    # independent row of Z), so the SE is computed from the n_paths // 2
-    # pair averages.
+    # Payoffs from Z and -Z are negatively correlated, so treating all n_paths
+    # payoffs as independent would give the wrong SE. The pair averages are
+    # independent across pairs, so the SE is computed over them.
     pair_averages = (payoff_pos + payoff_neg) / 2
     return _summarize(pair_averages, n_paths)
 

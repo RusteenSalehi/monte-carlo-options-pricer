@@ -11,6 +11,8 @@
 - If two functions share most of their logic, factor out the shared 
   part instead of duplicating it.
 - Comments explain WHY, not what. No comments restating the code.
+- Never remove a check that prevents silently wrong output, even if 
+  it looks unreachable today.
 
 ## Deliberate design decisions (do not "simplify" these away)
 - simulate_paths takes Z as an input and stores full paths. Full paths 

@@ -1,9 +1,7 @@
-"""Compare plain and antithetic Monte Carlo call pricing as n_paths grows."""
+"""Compare plain and antithetic Monte Carlo call pricing as n_paths grows.
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+Run from the repo root: python -m scripts.compare_variance_reduction
+"""
 
 from src.monte_carlo import antithetic_call_price, european_call_price
 

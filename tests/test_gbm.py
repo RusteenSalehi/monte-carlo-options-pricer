@@ -27,7 +27,6 @@ def test_zero_volatility_is_deterministic():
     times = np.linspace(0.0, T, n_steps + 1)
     expected = S0 * np.exp(r * times)
     np.testing.assert_allclose(S, np.broadcast_to(expected, S.shape), rtol=1e-12)
-    assert S[:, -1] == pytest.approx(S0 * np.exp(r * T), rel=1e-12)
 
 
 def test_same_Z_gives_identical_paths():

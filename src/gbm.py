@@ -19,8 +19,7 @@ def generate_normals(
         An array of shape (n_paths, n_steps) of independent standard
         normal draws.
     """
-    rng = np.random.default_rng(seed)
-    return rng.standard_normal((n_paths, n_steps))
+    return np.random.default_rng(seed).standard_normal((n_paths, n_steps))
 
 
 def simulate_paths(
@@ -55,12 +54,12 @@ def simulate_paths(
 
     n_paths, n_steps = Z.shape
     dt = T / n_steps
+    drift = (r - sigma**2 / 2) * dt
+    vol = sigma * np.sqrt(dt)
 
-    S = np.zeros((n_paths, n_steps + 1))
+    S = np.empty((n_paths, n_steps + 1))
     S[:, 0] = S0
     for t in range(n_steps):
-        S[:, t + 1] = S[:, t] * np.exp(
-            (r - sigma**2 / 2) * dt + sigma * np.sqrt(dt) * Z[:, t]
-        )
+        S[:, t + 1] = S[:, t] * np.exp(drift + vol * Z[:, t])
 
     return S

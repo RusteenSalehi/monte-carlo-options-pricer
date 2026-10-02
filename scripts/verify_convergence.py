@@ -1,9 +1,7 @@
-"""Compare Monte Carlo call prices against Black-Scholes as n_paths grows."""
+"""Compare Monte Carlo call prices against Black-Scholes as n_paths grows.
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+Run from the repo root: python -m scripts.verify_convergence
+"""
 
 from src.black_scholes import call_price
 from src.monte_carlo import european_call_price
