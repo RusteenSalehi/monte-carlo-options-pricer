@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from src import gbm
+from src.gbm_numba import NUMBA_AVAILABLE, simulate_paths_numba
 
 
 def test_output_shape():
@@ -46,3 +47,30 @@ def test_generate_normals_same_seed_is_reproducible():
 def test_1d_Z_raises():
     with pytest.raises(ValueError):
         gbm.simulate_paths(100.0, 0.05, 0.2, 1.0, np.zeros(10))
+
+
+def test_vectorized_matches_loop():
+    Z = gbm.generate_normals(n_paths=500, n_steps=50, seed=2)
+    loop = gbm.simulate_paths(100.0, 0.05, 0.2, 1.0, Z)
+    vectorized = gbm.simulate_paths_vectorized(100.0, 0.05, 0.2, 1.0, Z)
+    np.testing.assert_allclose(vectorized, loop, rtol=1e-10)
+
+
+def test_terminal_matches_loop_terminal_column():
+    n_steps = 50
+    Z = gbm.generate_normals(n_paths=500, n_steps=n_steps, seed=3)
+    loop_terminal = gbm.simulate_paths(100.0, 0.05, 0.2, 1.0, Z)[:, -1]
+    # The sum of n independent standard normals divided by sqrt(n) is itself
+    # standard normal, and it reproduces the same terminal price exactly
+    # because the drift terms sum to (r - sigma**2/2) * T.
+    Z_terminal = Z.sum(axis=1) / np.sqrt(n_steps)
+    terminal = gbm.simulate_terminal(100.0, 0.05, 0.2, 1.0, Z_terminal)
+    np.testing.assert_allclose(terminal, loop_terminal, rtol=1e-10)
+
+
+@pytest.mark.skipif(not NUMBA_AVAILABLE, reason="numba is not installed")
+def test_numba_matches_loop():
+    Z = gbm.generate_normals(n_paths=500, n_steps=50, seed=4)
+    loop = gbm.simulate_paths(100.0, 0.05, 0.2, 1.0, Z)
+    compiled = simulate_paths_numba(100.0, 0.05, 0.2, 1.0, Z)
+    np.testing.assert_allclose(compiled, loop, rtol=1e-10)

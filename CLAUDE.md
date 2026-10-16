@@ -28,6 +28,8 @@
   powers 0..degree.
 - The binomial tree is the reference answer for American options, 
   the way Black-Scholes is for European.
+- simulate_paths (loop) stays as the reference implementation; 
+  faster versions must be tested against it.
 - Random numbers come from np.random.default_rng, never the legacy 
   np.random API.
 
