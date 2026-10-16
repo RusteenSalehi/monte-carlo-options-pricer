@@ -1,9 +1,13 @@
-"""Compare plain and antithetic Monte Carlo call pricing as n_paths grows.
+"""Compare plain, antithetic, and control variate Monte Carlo call pricing.
 
 Run from the repo root: python -m scripts.compare_variance_reduction
 """
 
-from src.monte_carlo import antithetic_call_price, european_call_price
+from src.monte_carlo import (
+    antithetic_call_price,
+    control_variate_call_price,
+    european_call_price,
+)
 
 S0 = 100.0
 K = 100.0
@@ -19,19 +23,23 @@ def main() -> None:
     print(f"S0={S0}, K={K}, T={T}, r={r}, sigma={sigma}, n_steps={N_STEPS}\n")
     print(
         f"{'n_paths':>10}  {'plain':>10}  {'plain SE':>10}  "
-        f"{'anti':>10}  {'anti SE':>10}  {'VR factor':>10}"
+        f"{'anti':>10}  {'anti SE':>10}  {'anti VR':>10}  "
+        f"{'cv':>10}  {'cv SE':>10}  {'cv VR':>10}"
     )
 
-    # The variance reduction factor (plain SE / antithetic SE) ** 2 is how
-    # many times more plain paths you would need to match the antithetic
-    # precision, since SE shrinks like 1 / sqrt(n_paths).
+    # The variance reduction factor (plain SE / method SE) ** 2 is how many
+    # times more plain paths you would need to match the method's precision,
+    # since SE shrinks like 1 / sqrt(n_paths).
     for n_paths in N_PATHS_LEVELS:
         plain = european_call_price(S0, K, T, r, sigma, N_STEPS, n_paths, seed=SEED)
         anti = antithetic_call_price(S0, K, T, r, sigma, N_STEPS, n_paths, seed=SEED)
-        vr_factor = (plain.std_error / anti.std_error) ** 2
+        cv = control_variate_call_price(S0, K, T, r, sigma, N_STEPS, n_paths, seed=SEED)
+        anti_vr = (plain.std_error / anti.std_error) ** 2
+        cv_vr = (plain.std_error / cv.std_error) ** 2
         print(
             f"{n_paths:>10,}  {plain.price:>10.6f}  {plain.std_error:>10.6f}  "
-            f"{anti.price:>10.6f}  {anti.std_error:>10.6f}  {vr_factor:>10.3f}"
+            f"{anti.price:>10.6f}  {anti.std_error:>10.6f}  {anti_vr:>10.3f}  "
+            f"{cv.price:>10.6f}  {cv.std_error:>10.6f}  {cv_vr:>10.3f}"
         )
 
 

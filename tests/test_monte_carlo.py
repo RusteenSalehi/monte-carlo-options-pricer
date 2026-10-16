@@ -34,3 +34,23 @@ def test_antithetic_reduces_std_error_for_atm_call():
 def test_antithetic_odd_n_paths_raises(pricer):
     with pytest.raises(ValueError):
         pricer(S0, K, T, r, sigma, N_STEPS, 1_001, seed=SEED)
+
+
+@pytest.mark.parametrize(
+    "pricer, bs_price",
+    [
+        (monte_carlo.control_variate_call_price, black_scholes.call_price),
+        (monte_carlo.control_variate_put_price, black_scholes.put_price),
+    ],
+)
+def test_control_variate_price_within_3_std_errors_of_black_scholes(pricer, bs_price):
+    bs = bs_price(S0, K, T, r, sigma)
+    mc = pricer(S0, K, T, r, sigma, N_STEPS, N_PATHS, seed=SEED)
+    assert mc.n_paths == N_PATHS
+    assert abs(mc.price - bs) < 3 * mc.std_error
+
+
+def test_control_variate_reduces_std_error_for_atm_call():
+    plain = monte_carlo.european_call_price(S0, K, T, r, sigma, N_STEPS, N_PATHS, seed=SEED)
+    cv = monte_carlo.control_variate_call_price(S0, K, T, r, sigma, N_STEPS, N_PATHS, seed=SEED)
+    assert cv.std_error < plain.std_error

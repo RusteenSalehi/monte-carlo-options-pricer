@@ -21,6 +21,13 @@
 - Pricers return MCResult (price, std_error, n_paths), not a bare float.
 - Antithetic standard error is computed over pair averages, not 
   individual payoffs.
+- Control variates use the discounted terminal stock price as the 
+  control, with b estimated from the same sample.
+- Finite-difference Greeks always use common random numbers.
+- LSM regresses on in-the-money paths only, with basis S/K 
+  powers 0..degree.
+- The binomial tree is the reference answer for American options, 
+  the way Black-Scholes is for European.
 - Random numbers come from np.random.default_rng, never the legacy 
   np.random API.
 

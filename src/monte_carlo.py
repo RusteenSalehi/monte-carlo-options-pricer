@@ -16,8 +16,9 @@ class MCResult:
         price: Discounted mean payoff across all simulated paths.
         std_error: Standard error of the price estimate (sample std of the
             i.i.d. samples, ddof=1, divided by sqrt(number of samples)). The
-            samples are the discounted payoffs for plain Monte Carlo and the
-            antithetic pair averages for antithetic variates.
+            samples are the discounted payoffs for plain Monte Carlo, the
+            antithetic pair averages for antithetic variates, and the
+            adjusted payoffs for control variates.
         n_paths: Total number of simulated paths used.
     """
 
@@ -35,6 +36,15 @@ def _summarize(samples: np.ndarray, n_paths: int) -> MCResult:
     )
 
 
+def _payoffs(S: np.ndarray, K: float, option_type: Literal["call", "put"]) -> np.ndarray:
+    """Undiscounted exercise payoffs for an array of asset prices."""
+    if option_type == "call":
+        return np.maximum(S - K, 0.0)
+    if option_type == "put":
+        return np.maximum(K - S, 0.0)
+    raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
+
+
 def _discounted_payoffs(
     S_T: np.ndarray,
     K: float,
@@ -43,13 +53,7 @@ def _discounted_payoffs(
     option_type: Literal["call", "put"],
 ) -> np.ndarray:
     """Discounted European payoffs for an array of terminal prices."""
-    if option_type == "call":
-        payoffs = np.maximum(S_T - K, 0.0)
-    elif option_type == "put":
-        payoffs = np.maximum(K - S_T, 0.0)
-    else:
-        raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
-    return np.exp(-r * T) * payoffs
+    return np.exp(-r * T) * _payoffs(S_T, K, option_type)
 
 
 def _plain_price(
@@ -93,6 +97,31 @@ def _antithetic_price(
     # independent across pairs, so the SE is computed over them.
     pair_averages = (payoff_pos + payoff_neg) / 2
     return _summarize(pair_averages, n_paths)
+
+
+def _control_variate_price(
+    S0: float,
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    n_steps: int,
+    n_paths: int,
+    seed: int | None,
+    option_type: Literal["call", "put"],
+) -> MCResult:
+    Z = generate_normals(n_paths, n_steps, seed=seed)
+    S_T = simulate_paths(S0, r, sigma, T, Z)[:, -1]
+    Y = _discounted_payoffs(S_T, K, r, T, option_type)
+    X = np.exp(-r * T) * S_T
+
+    # X is strongly correlated with Y and its true mean (S0) is known, so its
+    # observed sampling error X - S0 is used to cancel part of Y's sampling
+    # error. Estimating b from the same sample adds a small bias that
+    # vanishes as n_paths grows.
+    cov = np.cov(Y, X, ddof=1)
+    b = cov[0, 1] / cov[1, 1]
+    return _summarize(Y - b * (X - S0), n_paths)
 
 
 def european_call_price(
@@ -227,3 +256,71 @@ def antithetic_put_price(
         ValueError: If n_paths is odd.
     """
     return _antithetic_price(S0, K, T, r, sigma, n_steps, n_paths, seed, "put")
+
+
+def control_variate_call_price(
+    S0: float,
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    n_steps: int,
+    n_paths: int,
+    seed: int | None = None,
+) -> MCResult:
+    """Estimate a European call price by Monte Carlo with a control variate.
+
+    The control is the discounted terminal stock price exp(-r*T) * S_T,
+    whose risk-neutral mean is S0. The coefficient b is estimated from the
+    same sample.
+
+    Args:
+        S0: Initial price of the underlying asset.
+        K: Strike price of the option.
+        T: Time to expiration, in years.
+        r: Risk-free interest rate (annualized).
+        sigma: Volatility of the underlying asset (annualized).
+        n_steps: Number of time steps in each simulated path.
+        n_paths: Number of simulated paths.
+        seed: Optional seed for the random number generator.
+
+    Returns:
+        An MCResult with the mean of the control-variate-adjusted discounted
+        call payoffs (price), their standard error (std_error), and the
+        number of paths used (n_paths).
+    """
+    return _control_variate_price(S0, K, T, r, sigma, n_steps, n_paths, seed, "call")
+
+
+def control_variate_put_price(
+    S0: float,
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    n_steps: int,
+    n_paths: int,
+    seed: int | None = None,
+) -> MCResult:
+    """Estimate a European put price by Monte Carlo with a control variate.
+
+    The control is the discounted terminal stock price exp(-r*T) * S_T,
+    whose risk-neutral mean is S0. The coefficient b is estimated from the
+    same sample.
+
+    Args:
+        S0: Initial price of the underlying asset.
+        K: Strike price of the option.
+        T: Time to expiration, in years.
+        r: Risk-free interest rate (annualized).
+        sigma: Volatility of the underlying asset (annualized).
+        n_steps: Number of time steps in each simulated path.
+        n_paths: Number of simulated paths.
+        seed: Optional seed for the random number generator.
+
+    Returns:
+        An MCResult with the mean of the control-variate-adjusted discounted
+        put payoffs (price), their standard error (std_error), and the
+        number of paths used (n_paths).
+    """
+    return _control_variate_price(S0, K, T, r, sigma, n_steps, n_paths, seed, "put")
