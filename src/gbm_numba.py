@@ -1,6 +1,15 @@
 """Numba-compiled GBM path simulation, matching src.gbm.simulate_paths."""
 
+import os
+import platform
+import sys
+
 import numpy as np
+
+# LLVM's machine model for Windows ARM64 CPUs is incomplete and aborts the
+# whole process while compiling; targeting a generic CPU avoids it.
+if sys.platform == "win32" and platform.machine() == "ARM64":
+    os.environ.setdefault("NUMBA_CPU_NAME", "generic")
 
 # Fall back to plain Python if numba is missing or broken, so importing this
 # module never breaks the rest of the project. Callers that care about speed
