@@ -2,13 +2,13 @@
 
 import os
 import platform
-import sys
 
 import numpy as np
 
-# LLVM's machine model for Windows ARM64 CPUs is incomplete and aborts the
-# whole process while compiling; targeting a generic CPU avoids it.
-if sys.platform == "win32" and platform.machine() == "ARM64":
+# LLVM's machine model for some ARM64 CPUs (seen on Windows and on Linux
+# under WSL) is incomplete and aborts the whole process while compiling;
+# targeting a generic CPU avoids it.
+if platform.machine().lower() in ("arm64", "aarch64"):
     os.environ.setdefault("NUMBA_CPU_NAME", "generic")
 
 # Fall back to plain Python if numba is missing or broken, so importing this
