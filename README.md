@@ -1,5 +1,7 @@
 # Monte Carlo Options Pricer
 
+[![tests](https://github.com/RusteenSalehi/monte-carlo-options-pricer/actions/workflows/tests.yml/badge.svg)](https://github.com/RusteenSalehi/monte-carlo-options-pricer/actions/workflows/tests.yml)
+
 A Python engine that prices European and American stock options by simulating many possible future price paths, checked against closed-form and binomial-tree reference answers.
 
 ## The idea in plain English
@@ -179,6 +181,8 @@ All four methods give the same call price. The key insight is that under GBM the
 
 ```
 monte-carlo-options-pricer/
+├── .github/workflows/
+│   └── tests.yml                          CI: pytest on Python 3.10 and 3.12
 ├── src/
 │   ├── gbm.py                             GBM shocks and path simulators (loop reference, vectorized, terminal-only)
 │   ├── gbm_numba.py                       Numba-compiled loop simulator, optional at runtime
