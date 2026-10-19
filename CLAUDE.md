@@ -40,3 +40,5 @@
 - Never change numerical results silently. If a change alters output 
   for a fixed seed, say so and explain why.
 - Commit messages describe what changed and why, in one line.
+- One commit per stage or feature. Never combine separate features 
+  into a single commit, even if asked to commit "at the end."
