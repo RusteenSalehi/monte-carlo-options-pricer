@@ -50,7 +50,7 @@ def main() -> None:
     for n_paths, n_steps in CONFIGS:
         Z = generate_normals(n_paths, n_steps, seed=SEED)
         # Built from the same Z so the terminal-only price matches the path
-        # simulators exactly; its timing does not depend on where Z came from.
+        # simulators to rounding; its timing does not depend on where Z came from.
         Z_terminal = Z.sum(axis=1) / np.sqrt(n_steps)
 
         methods = [

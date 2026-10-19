@@ -36,6 +36,8 @@ def test_binomial_american_put_exceeds_european_put():
 def test_lsm_american_put_matches_binomial():
     lsm = longstaff_schwartz_price(P_S0, P_K, P_T, P_r, P_sigma, 50, 100_000, "put", seed=42)
     tree = crr_price(P_S0, P_K, P_T, P_r, P_sigma, 2000, "put", american=True)
+    # The extra allowance covers LSM's known low bias from its suboptimal
+    # exercise rule, which more paths do not remove.
     assert abs(lsm.price - tree) < 3 * lsm.std_error + 0.03
 
 

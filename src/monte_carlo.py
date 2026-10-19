@@ -10,15 +10,18 @@ from src.gbm import generate_normals, simulate_paths
 
 @dataclass(frozen=True)
 class MCResult:
-    """Result of a Monte Carlo option pricing run.
+    """Result of a Monte Carlo estimate.
 
     Attributes:
-        price: Discounted mean payoff across all simulated paths.
-        std_error: Standard error of the price estimate (sample std of the
-            i.i.d. samples, ddof=1, divided by sqrt(number of samples)). The
+        price: The estimate: an option price, or for pathwise_call_delta,
+            the delta.
+        std_error: Standard error of the estimate (sample std of the i.i.d.
+            samples, ddof=1, divided by sqrt(number of samples)). The
             samples are the discounted payoffs for plain Monte Carlo, the
-            antithetic pair averages for antithetic variates, and the
-            adjusted payoffs for control variates.
+            antithetic pair averages for antithetic variates, the adjusted
+            payoffs for control variates, the discounted path cashflows for
+            Longstaff-Schwartz, and the per-path derivatives for pathwise
+            delta.
         n_paths: Total number of simulated paths used.
     """
 
@@ -28,7 +31,7 @@ class MCResult:
 
 
 def _summarize(samples: np.ndarray, n_paths: int) -> MCResult:
-    """Build an MCResult from i.i.d. samples of the discounted payoff."""
+    """Build an MCResult from i.i.d. samples whose mean is the estimate."""
     return MCResult(
         price=float(samples.mean()),
         std_error=float(samples.std(ddof=1) / np.sqrt(samples.size)),

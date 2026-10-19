@@ -214,6 +214,7 @@ monte-carlo-options-pricer/
 │   ├── greeks_vs_spot.png                 Greeks vs spot, analytical and Monte Carlo
 │   ├── american_vs_european.png           American vs European put prices
 │   └── benchmarks.png                     Simulator timings
+├── .gitignore                             Ignores the virtual environment and Python/pytest caches
 ├── CLAUDE.md                              Project rules and design decisions
 ├── pytest.ini                             Lets bare pytest import src
 ├── requirements.txt                       Dependencies
